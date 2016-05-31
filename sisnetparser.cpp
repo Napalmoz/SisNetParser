@@ -1,22 +1,53 @@
 #include <rtklib.h>
 #include <sisnetparser.h>
+#include <time.h>
+#include <stdio.h>
+
+#include <iostream>
+#include <ctime>
+
+using namespace std;
 
 /*
  * проверка наличия нулевого сообщения
  */
-bool CheckSisNetMsgIsNull()
+bool CheckSisNetMsgIsNull(unsigned char *msg)
 {
-    //
+    char ch = msg[1];
+    ch = msg[1]&0x02;
+    if((msg[1]&0x02) == 0)
+    {
+        for(int i=2; i<29; i++)
+            if(msg[i] != 0)
+                return false;
+    }
+    return true;
 }
 
 /*
  * Получения время приема сообщения
  */
 
-gtime_t GetReciveTime()
+time_t GetReciveTime()
 {
-    //
+    char buffer[80];
+    time_t seconds = time(NULL);
+    tm* timeinfo = localtime(&seconds);
+    char* format = "%Y/%m/%d %H:%M:%S";
+    strftime(buffer, 80, format, timeinfo);
+    cout<<"Current Datetime: "<<buffer<<endl;
+    cin.get();
+    return 0;
 }
+
+//time_t GetReciveTime()
+//{
+//    time_t rawtime;
+//    struct tm * timeinfo;
+//    time ( &rawtime);
+//    timeinfo = localtime( &rawtime );
+//    return rawtime;
+//}
 
 unsigned int GetCRCWAAS(unsigned char *msg)
 {
@@ -97,10 +128,9 @@ int input_sisnet(raw_t *raw, unsigned char data)
 unsigned int ParseSisNetMsg(unsigned char *msg, int n, sisnetmsg_t *sisnetmsg)
 {
     //иниц. структуру
+    sisnetmsg->recive_time = GetReciveTime();       //взять системное время записать в sisnetmsg->recive_time;
     sisnetmsg->waas_crc_flag = false;
     sisnetmsg->type = -1;
-
-    //взять системное время записать в sbsmsg->recive_time;
 
     //проверяем длину сообщ. Sisnet
     if(n < 80)
@@ -119,5 +149,6 @@ unsigned int ParseSisNetMsg(unsigned char *msg, int n, sisnetmsg_t *sisnetmsg)
         return 0;
     sisnetmsg->waas_crc_flag = CheckCRCWAAS(&sisnetmsg->sbsmsg, sisnetmsg->waas_crc);
     sisnetmsg->type = getbitu(sisnetmsg->sbsmsg.msg ,8,6);
+    sisnetmsg->is_msg_null = CheckSisNetMsgIsNull(sisnetmsg->sbsmsg.msg);
     return 1;
 }

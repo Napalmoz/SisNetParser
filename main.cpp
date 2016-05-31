@@ -5,6 +5,8 @@
 #include <ntripclient.h>
 #include <rtklib.h>
 #include <sisnetparser.h>
+#include <time.h>
+#include <stdio.h>
 
 int main()
 {
@@ -25,7 +27,15 @@ int main()
 
     sisnetmsg_t sisnetMsg;
     gtime_t time;
+    struct tm * timeinfo;
     char tstr[32];
+
+
+//    unsigned char *msg = (unsigned char*)"*MSG,1898,122152,531000140700440180000000000000B40E4084000003BBBBBBBBBBBBAFCB6800*E4\r\n";
+//    //unsigned char *msg = (unsigned char*)"*MSG,1898,122152,531000000000000000000000000000000000000000000000000000002FCB6800*E4\r\n";
+//    int count = 86;
+//    ParseSisNetMsg(msg, count, &sisnetMsg);
+
     while(true)
     {
         my_buf_struct = client->GetBuf();
@@ -36,9 +46,12 @@ int main()
             {
                 time = gpst2time(sisnetMsg.sbsmsg.week, sisnetMsg.sbsmsg.tow);
                 time2str(time,tstr,3);
+                timeinfo = localtime( &sisnetMsg.recive_time );
                 printf("%s ", tstr);
                 printf("%d ", sisnetMsg.type);
+                printf ("%s ", asctime (timeinfo));
                 if(sisnetMsg.waas_crc_flag)
+//                if(sisnetMsg.is_msg_null)
                     printf("%s\r\n", "OK CRC");
                 else
                     printf("%s\r\n", "ERROR CRC");
