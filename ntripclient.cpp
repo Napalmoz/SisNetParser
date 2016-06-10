@@ -16,6 +16,7 @@
 
 #define BUFFERSIZE 80100
 #define DEBUG 1
+#define STRLEN 64
 
 typedef int sockettype;
 #define MAXDATASIZE 1000 /* max number of bytes we can get at once */
@@ -27,24 +28,39 @@ char buf[MAXDATASIZE];
 
 NtCl::NtCl(char *s, char *pr, char *u, char *p, char *m, int md, int recon_time)
 {
+    GetMem();
     SetParam(s, pr, u, p, m, md, recon_time);
     //инициализация атрибутов создания нового потока, новый поток должен быть "detached"
-    if (pthread_attr_init(&attr)) {
-        exit(EXIT_FAILURE);
-    }
     if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)){
         exit(EXIT_FAILURE);
     }
 }
 
+NtCl::NtCl(){
+    GetMem();
+    SetParam("", "", "", "", "", 0, 0);
+    if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)){
+        exit(EXIT_FAILURE);
+    }
+};
+
+void NtCl::GetMem()
+{
+    server = (char *)malloc(STRLEN);
+    port = (char *)malloc(STRLEN);
+    user = (char *)malloc(STRLEN);
+    password = (char *)malloc(STRLEN);
+    mnt = (char *)malloc(STRLEN);
+}
+
 //Установка параметров подключения
 void NtCl::SetParam(char *s, char *pr, char *u, char *p, char *m, int md, int recon_time)
 {
-    server = s;
-    port = pr;
-    user = u;
-    password = p;
-    mnt = m;
+    strcpy(server, s);
+    strcpy(port,pr);
+    strcpy(user, u);
+    strcpy(password, p);
+    strcpy(mnt, m);
     mode = md;
 
     totalbytes = 0;
@@ -54,6 +70,7 @@ void NtCl::SetParam(char *s, char *pr, char *u, char *p, char *m, int md, int re
     error = 0;
     proxyserver = 0;
     reconect_time = recon_time;
+    numbytes = 0;
 }
 
 
@@ -99,8 +116,8 @@ void NtCl::RunTh(void)
         error = 0;
         sockettype sockfd = 0;
         struct sockaddr_in their_addr;
-        struct hostent *he;
-        struct servent *se;
+        struct hostent *he = (hostent *)malloc(sizeof(hostent));
+        struct servent *se = (servent *)malloc(sizeof(servent));
         if(sleeptime)
         {
           sleeptime += 2;
@@ -318,7 +335,6 @@ Buffer NtCl::GetBuf(){
     buf_struct.size_msg = numbytes;
     buf_struct.buyte_count = totalbytes;
     return buf_struct;
-
 }
 
 static char encodingTable [64] = {

@@ -1,21 +1,41 @@
 #include <rtklib.h>
 #include <sisnetparser.h>
+#include <time.h>
+#include <stdio.h>
+
+#include <iostream>
+#include <ctime>
+
+using namespace std;
 
 /*
  * проверка наличия нулевого сообщения
  */
-bool CheckSisNetMsgIsNull()
+bool CheckSisNetMsgIsNull(unsigned char *msg)
 {
-    //
+    char ch = msg[1];
+    ch = msg[1]&0x02;
+    if((msg[1]&0x02) == 0)
+    {
+        for(int i=2; i<29; i++)
+            if(msg[i] != 0)
+                return false;
+    }
+    return true;
 }
 
 /*
  * Получения время приема сообщения
  */
 
-gtime_t GetReciveTime()
+time_t GetReciveTime()
 {
-    //
+    char buffer[80];
+    time_t seconds = time(NULL);
+    tm* timeinfo = localtime(&seconds);
+    char* format = "%Y/%m/%d %H:%M:%S";
+    strftime(buffer, 80, format, timeinfo);
+    return seconds;
 }
 
 unsigned int GetCRCWAAS(unsigned char *msg)
@@ -43,25 +63,37 @@ static int decode_sisnet(raw_t *raw)
     int i=0;
     unsigned int b;
 
-    char *p= (char*)raw->buff+5;
-
-    sscanf(p,"%d,%d,",&raw->sbsmsg.week,&raw->sbsmsg.tow);
-
-    p = strrchr(p, ',')+1;
-
-    for (i=0;i<29;i++)
+    try
     {
-        b=0;
-        sscanf(p,"%2x", &b);
-        p+=2;
-        raw->sbsmsg.msg[i] = b;
+        char *p= (char*)raw->buff+5;
+
+        sscanf(p,"%d,%d,",&raw->sbsmsg.week,&raw->sbsmsg.tow);
+
+        uint p_save = (uint)p;
+
+        p = strrchr(p, ',')+1;
+        uint p_now = (uint)p;
+        if(((p_save + (4096-5)) < p_now) || (p_save > p_now))
+            return 0;
+
+        for (i=0;i<29;i++)
+        {
+            b=0;
+            sscanf(p,"%2x", &b);
+            p+=2;
+            raw->sbsmsg.msg[i] = b;
+        }
+
+        raw->sbsmsg.msg[28]&=0xC0;
+
+        raw->sbsmsg.prn=125;	/*SISNET PRN*/
+
+        return 3;
     }
-
-    raw->sbsmsg.msg[28]&=0xC0;
-
-    raw->sbsmsg.prn=125;	/*SISNET PRN*/
-
-    return 3;
+    catch(...)
+    {
+        return 0;
+    }
 }
 
 int input_sisnet(raw_t *raw, unsigned char data)
@@ -97,10 +129,9 @@ int input_sisnet(raw_t *raw, unsigned char data)
 unsigned int ParseSisNetMsg(unsigned char *msg, int n, sisnetmsg_t *sisnetmsg)
 {
     //иниц. структуру
+    sisnetmsg->recive_time = GetReciveTime();       //взять системное время записать в sisnetmsg->recive_time;
     sisnetmsg->waas_crc_flag = false;
     sisnetmsg->type = -1;
-
-    //взять системное время записать в sbsmsg->recive_time;
 
     //проверяем длину сообщ. Sisnet
     if(n < 80)
@@ -108,16 +139,18 @@ unsigned int ParseSisNetMsg(unsigned char *msg, int n, sisnetmsg_t *sisnetmsg)
         return 0;
     }
     sisnetmsg->waas_crc = GetCRCWAAS(msg);
+    raw_t raw;
 
-    raw_t *raw = new raw_t;
-    memcpy(raw->buff,msg,n);
-    raw->nbyte = n;
-    if(!input_sisnet(raw, raw->buff[n-2]))
+//    raw_t *raw = new raw_t;
+    memcpy(raw.buff,msg,n);
+    raw.nbyte = n;
+    if(!input_sisnet(&raw, raw.buff[n-2]))
         return 0;
-    sisnetmsg->sbsmsg = raw->sbsmsg;
+    sisnetmsg->sbsmsg = raw.sbsmsg;
     if(sisnetmsg->sbsmsg.week == 0)
         return 0;
     sisnetmsg->waas_crc_flag = CheckCRCWAAS(&sisnetmsg->sbsmsg, sisnetmsg->waas_crc);
     sisnetmsg->type = getbitu(sisnetmsg->sbsmsg.msg ,8,6);
+    sisnetmsg->is_msg_null = CheckSisNetMsgIsNull(sisnetmsg->sbsmsg.msg);
     return 1;
 }

@@ -25,6 +25,7 @@ public:
 
 
     NtCl(char *s, char *pr, char *u, char *p, char *m, int md, int recon_time);
+    NtCl();
 
 //Установка параметров подключения
     void SetParam(char *s, char *pr, char *u, char *p, char *m, int md, int recon_time);
@@ -61,6 +62,7 @@ private:
     void RunTh1(void);
     static void *StartRunTh(void*);
     static int encode(char *buf, int size, char *user, char *pwd);
+    void GetMem();
 };                                                        //Конец объявления класса
 
 #endif // NTRIPCLIENT
