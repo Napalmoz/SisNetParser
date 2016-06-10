@@ -12,6 +12,5 @@ typedef struct {            /* SisNet message type */
 
 time_t GetReciveTime();
 unsigned int ParseSisNetMsg(unsigned char *msg, int n, sisnetmsg_t *sisnetmsg);
-
 #endif // SISNETPARSER
 

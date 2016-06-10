@@ -19,6 +19,7 @@
 
 #include <rtklib.h>
 #include <sisnetparser.h>
+<<<<<<< HEAD
 #include <database.h>
 #include <unistd.h>
 
@@ -80,6 +81,10 @@ void make_query(sisnetmsg_t *sisnetMsg, char *out_query)
 
     sprintf(out_query, "INSERT INTO \"Test\" VALUES(%d,%d,'%s');", 8, sisnetMsg->type, tstr);
 }
+=======
+#include <time.h>
+#include <stdio.h>
+>>>>>>> feeb92804102c997de95d1a9c8f396da0554a3f7
 
 int main()
 {
@@ -138,6 +143,7 @@ int main()
     gtime_t time;
     struct tm * timeinfo;
     char tstr[32];
+<<<<<<< HEAD
     char ctstr[32];
     char* format = "%Y/%m/%d %H:%M:%S";
 
@@ -165,12 +171,23 @@ int main()
     int i = 0;
 
     while (true)
+=======
+
+
+//    unsigned char *msg = (unsigned char*)"*MSG,1898,122152,531000140700440180000000000000B40E4084000003BBBBBBBBBBBBAFCB6800*E4\r\n";
+//    //unsigned char *msg = (unsigned char*)"*MSG,1898,122152,531000000000000000000000000000000000000000000000000000002FCB6800*E4\r\n";
+//    int count = 86;
+//    ParseSisNetMsg(msg, count, &sisnetMsg);
+
+    while(true)
+>>>>>>> feeb92804102c997de95d1a9c8f396da0554a3f7
     {
         for(i = 0; i < ClientCount; i++)
         {
             my_buf_struct = ClientPool[i].GetBuf();
             if(bcount_arr[i] != my_buf_struct.buyte_count)
             {
+<<<<<<< HEAD
                 printf("%d ", i);
                 //printf("%s ", my_buf_struct.buf);
 
@@ -192,6 +209,19 @@ int main()
                         printf("%s\r\n", "ERROR CRC");
                 }
 
+=======
+                time = gpst2time(sisnetMsg.sbsmsg.week, sisnetMsg.sbsmsg.tow);
+                time2str(time,tstr,3);
+                timeinfo = localtime( &sisnetMsg.recive_time );
+                printf("%s ", tstr);
+                printf("%d ", sisnetMsg.type);
+                printf ("%s ", asctime (timeinfo));
+                if(sisnetMsg.waas_crc_flag)
+//                if(sisnetMsg.is_msg_null)
+                    printf("%s\r\n", "OK CRC");
+                else
+                    printf("%s\r\n", "ERROR CRC");
+>>>>>>> feeb92804102c997de95d1a9c8f396da0554a3f7
             }
             bcount_arr[i] = my_buf_struct.buyte_count;
         }

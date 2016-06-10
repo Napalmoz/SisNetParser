@@ -35,8 +35,23 @@ time_t GetReciveTime()
     tm* timeinfo = localtime(&seconds);
     char* format = "%Y/%m/%d %H:%M:%S";
     strftime(buffer, 80, format, timeinfo);
+<<<<<<< HEAD
     return seconds;
+=======
+    cout<<"Current Datetime: "<<buffer<<endl;
+    cin.get();
+    return 0;
+>>>>>>> feeb92804102c997de95d1a9c8f396da0554a3f7
 }
+
+//time_t GetReciveTime()
+//{
+//    time_t rawtime;
+//    struct tm * timeinfo;
+//    time ( &rawtime);
+//    timeinfo = localtime( &rawtime );
+//    return rawtime;
+//}
 
 unsigned int GetCRCWAAS(unsigned char *msg)
 {
